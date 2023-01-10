@@ -1,0 +1,13 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Application
+Application <-- ContentPanel
+ContentPanel <-- Application
+
+NewQueryPanel <-- ContentPanel
+Application <-- NewQueryPanel
+
+MapMarkerImage --> MapMarkerCircle
+MapMarkerSimple --> MapMarkerCircle
+@enduml

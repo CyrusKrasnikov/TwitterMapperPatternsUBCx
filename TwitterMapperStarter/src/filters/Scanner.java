@@ -9,15 +9,27 @@ import java.util.regex.Pattern;
  * A simple scanner for a language consisting of words and parentheses.
  */
 public class Scanner {
-    private List<String> tokens;
+    private final List<String> tokens;
+    private final Pattern tokenPattern;
 
-    public Scanner(String input) {
+    /**
+     * Constructor compiles regular expression and initializes tokens list as linked list.
+     */
+    public Scanner() {
         // This pattern matches words ([a-zA-Z]+), left and right parens, and whitespace
-        Pattern tokenPattern = Pattern.compile("\\(|\\)|[a-zA-Z]+|\\s+");
+        tokenPattern = Pattern.compile("\\(|\\)|[a-zA-Z]+|\\s+");
 
-        // This simple scanner scans the entire input in its constructor, building a list of tokens
-        // which it then returns as necessary in response to calls to its peek and advance methods.
         tokens = new LinkedList<>();
+        // Actual tokenization is extracted from this constructor to the dedicated method
+    }
+
+    /**
+     * This simple scanner scans the entire input in its constructor, adding tokens to a list
+     * which it then returns as necessary in response to calls to its peek and advance methods.
+     *
+     * @param input String to scan
+     */
+    public void tokenize(String input) {
         Matcher m = tokenPattern.matcher(input);
         while (m.find()) {
             String token = m.group();
@@ -26,6 +38,7 @@ public class Scanner {
             tokens.add(token);
         }
     }
+
 
     /**
      * Return the first token remaining, without changing anything.

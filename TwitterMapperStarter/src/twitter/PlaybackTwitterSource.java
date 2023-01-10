@@ -5,17 +5,17 @@ import util.ObjectSource;
 
 /**
  * A Twitter source that plays back a recorded stream of tweets.
- *
+ * <p>
  * It ignores the set of terms provided except it uses the first call to setFilterTerms
  * as a signal to begin playback of the recorded stream of tweets.
- *
+ * <p>
  * Implements Observable - each tweet is signalled to all observers
  */
 public class PlaybackTwitterSource extends TwitterSource {
     // The speedup to apply to the recorded stream of tweets; 2 means play at twice the rate
     // at which the tweets were recorded
     private final double speedup;
-    private ObjectSource source = new ObjectSource("data/TwitterCapture.jobj");
+    private final ObjectSource source = new ObjectSource("data/TwitterCapture.jobj");
     private boolean threadStarted = false;
 
     public PlaybackTwitterSource(double speedup) {
@@ -26,8 +26,8 @@ public class PlaybackTwitterSource extends TwitterSource {
         if (threadStarted) return;
         threadStarted = true;
         Thread t = new Thread() {
-            long initialDelay = 1000;
-            long playbackStartTime = System.currentTimeMillis() + initialDelay;
+            final long initialDelay = 1000;
+            final long playbackStartTime = System.currentTimeMillis() + initialDelay;
             long recordStartTime = 0;
 
             public void run() {
@@ -53,8 +53,7 @@ public class PlaybackTwitterSource extends TwitterSource {
             private long computePlaybackTime(long statusTime) {
                 long statusDelta = statusTime - recordStartTime;
                 long targetDelta = Math.round(statusDelta / speedup);
-                long targetTime = playbackStartTime + targetDelta;
-                return targetTime;
+                return playbackStartTime + targetDelta;
             }
 
             private void pause(long millis) {

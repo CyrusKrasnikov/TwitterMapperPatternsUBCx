@@ -1,15 +1,12 @@
-package twitter.test;
+package tests.twitter;
 
 import org.junit.jupiter.api.Test;
 import twitter.PlaybackTwitterSource;
 import twitter4j.Status;
 
-import java.util.HashSet;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.Set;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test the basic functionality of the TwitterSource
@@ -17,12 +14,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestPlaybackTwitterSource {
 
     @Test
+    public void testGetFilterTerms() {
+        PlaybackTwitterSource source = new PlaybackTwitterSource(1.0);
+        source.setFilterTerms(set("apple","orange"));
+        pause(3 * 1000);
+        assertNotNull(source.getFilterTerms());
+        assertEquals(2,source.getFilterTerms().size());
+    }
+    @Test
     public void testSetup() {
         PlaybackTwitterSource source = new PlaybackTwitterSource(1.0);
         TestObserver to = new TestObserver();
-        // TODO: Once your TwitterSource class implements Observable, you must add the TestObserver as an observer to it here
+        source.addObserver(to); // Task 1: Once your TwitterSource class implements Observable, you must add the TestObserver as an observer to it here
         source.setFilterTerms(set("food"));
-        pause(3 * 1000);
+        pause(2 * 1000);
         assertTrue(to.getNTweets() > 0, "Expected getNTweets() to be > 0, was " + to.getNTweets());
         assertTrue(to.getNTweets() <= 10, "Expected getNTweets() to be <= 10, was " + to.getNTweets());
         int firstBunch = to.getNTweets();
@@ -42,14 +47,13 @@ public class TestPlaybackTwitterSource {
         }
     }
 
-    private <E> Set<E> set(E ... p) {
+    @SafeVarargs
+    private final <E> Set<E> set(E... p) {
         Set<E> ans = new HashSet<>();
-        for (E a : p) {
-            ans.add(a);
-        }
+        Collections.addAll(ans, p);
         return ans;
     }
-    private class TestObserver implements Observer {
+    private static class TestObserver implements Observer {
         private int nTweets = 0;
 
         @Override

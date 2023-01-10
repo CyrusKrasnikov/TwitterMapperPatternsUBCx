@@ -5,8 +5,10 @@ import util.ImageCache;
 
 import java.util.*;
 
-
-public abstract class TwitterSource {
+/**
+ * Abstracts tweets source with filter capability
+ */
+public abstract class TwitterSource extends Observable { //Task 1: Make TwitterSource extend Observable
     protected boolean doLogging = true;
     // The set of terms to look for in the stream of tweets
     protected Set<String> terms = new HashSet<>();
@@ -18,7 +20,6 @@ public abstract class TwitterSource {
         if (doLogging) {
             System.out.println(status.getUser().getName() + ": " + status.getText());
         }
-        ImageCache.getInstance().loadImage(status.getUser().getProfileImageURL());
     }
 
     public void setFilterTerms(Collection<String> newterms) {
@@ -31,10 +32,18 @@ public abstract class TwitterSource {
         return new ArrayList<>(terms);
     }
 
-    // This method is called each time a tweet is delivered to the application.
-    // TODO: Each active query should be informed about each incoming tweet so that
-    //       it can determine whether the tweet should be displayed
-    protected void handleTweet(Status s) {
+    /**
+     * This method is called each time a tweet is delivered to the application.
+    * EFFECTS: Each active query should be informed about each incoming tweet so that
+    *       it can determine whether the tweet should be displayed.
+     *       Preloads profile photo from status url to cache
+    */
+    protected void handleTweet(Status status) {
+        log(status);
+        // loading profile photo to cache
+        ImageCache.getInstance().loadImage(status.getUser().getProfileImageURL());
 
+        setChanged();
+        notifyObservers(status);
     }
 }

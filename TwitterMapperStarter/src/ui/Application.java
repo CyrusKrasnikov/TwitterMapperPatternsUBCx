@@ -3,13 +3,16 @@ package ui;
 import org.openstreetmap.gui.jmapviewer.Coordinate;
 import org.openstreetmap.gui.jmapviewer.JMapViewer;
 import org.openstreetmap.gui.jmapviewer.Layer;
+import org.openstreetmap.gui.jmapviewer.events.JMVCommandEvent;
 import org.openstreetmap.gui.jmapviewer.interfaces.ICoordinate;
 import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 import org.openstreetmap.gui.jmapviewer.tilesources.BingAerialTileSource;
 import query.Query;
 import twitter.PlaybackTwitterSource;
 import twitter.TwitterSource;
+import util.ImageCache;
 import util.SphericalGeometry;
+import util.Util;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,7 +30,7 @@ public class Application extends JFrame {
     // The content panel, which contains the entire UI
     private final ContentPanel contentPanel;
     // The provider of the tiles for the map, we use the Bing source
-    private BingAerialTileSource bing;
+    private final BingAerialTileSource bing;
     // All of the active queries
     private List<Query> queries = new ArrayList<>();
     // The source of tweets, a TwitterSource, either live or playback
@@ -55,13 +58,14 @@ public class Application extends JFrame {
         Set<String> allterms = getQueryTerms();
         twitterSource.setFilterTerms(allterms);
         contentPanel.addQuery(query);
-        // TODO: This is the place where you should connect the new query to the twitter source
+        // Task 4: This is the place where you should connect the new query to the twitter source
+        twitterSource.addObserver(query);
     }
 
     /**
-     * return a list of all terms mentioned in all queries. The live twitter source uses this
+     * The live twitter source uses this
      * to request matching tweets from the Twitter API.
-     * @return
+     * @return A list of all terms mentioned in all queries
      */
     private Set<String> getQueryTerms() {
         Set<String> ans = new HashSet<>();
@@ -121,21 +125,53 @@ public class Application extends JFrame {
             public void mouseMoved(MouseEvent e) {
                 Point p = e.getPoint();
                 ICoordinate pos = map().getPosition(p);
-                // TODO: Use the following method to set the text that appears at the mouse cursor
-                map().setToolTipText("This is a tooltip");
+
+                Collection<MapMarker> markers = getMarkersCovering(pos,pixelWidth(p));
+                StringBuilder text = new StringBuilder();
+                text.append("<html><table width=400>");
+                int count = 0;
+                for (MapMarker m :markers) {
+                    if(count++>9) break; // limit to avoid overflow
+                    MapMarkerImage marker = (MapMarkerImage) m;
+                    String url = "file:data/boring.png";
+                    if(ImageCache.getInstance().getImage(marker.getURL())!=Util.defaultImage)
+                        url = marker.getURL();
+                    text.append("<tr><td colspan=2>").append(marker.getName()).append(":</td></tr>")
+                            .append("<tr><td><img width='48' height='48' src=\"").append(url).append("\"></td>")
+                            .append("<td>").append(marker.getText()).append("</td>")
+                            .append("</tr>");
+                }
+                if(markers.size()>0)
+                    map().setToolTipText(text.toString());
+                else
+                    map().setToolTipText("");
+            }
+        });
+        map().addJMVListener(jmvCommandEvent -> {
+            if (jmvCommandEvent.getCommand() == JMVCommandEvent.COMMAND.ZOOM
+                    || jmvCommandEvent.getCommand() == JMVCommandEvent.COMMAND.MOVE
+            ) {
+                MapMarkerImage.clearPaintedPositions();
+                map().repaint();
             }
         });
     }
 
-    // How big is a single pixel on the map?  We use this to compute which tweet markers
-    // are at the current most position.
-    private double pixelWidth(Point p) {
-        ICoordinate center = map().getPosition(p);
-        ICoordinate edge = map().getPosition(new Point(p.x + 1, p.y));
+    /**
+     * We use this to compute which tweet markers are at the current most position.
+     * @param point Represents a pixel
+     * @return How big is a single pixel on the map?
+     */
+    private double pixelWidth(Point point) {
+        ICoordinate center = map().getPosition(point);
+        ICoordinate edge = map().getPosition(new Point(point.x + 1, point.y));
         return SphericalGeometry.distanceBetween(center, edge);
     }
 
-    // Get those layers (of tweet markers) that are visible because their corresponding query is enabled
+    /**
+     *  Get those layers (of tweet markers) that are visible because their corresponding query is enabled
+     * @return Layers set
+     */
     private Set<Layer> getVisibleLayers() {
         Set<Layer> ans = new HashSet<>();
         for (Query q : queries) {
@@ -146,18 +182,25 @@ public class Application extends JFrame {
         return ans;
     }
 
-    // Get all the markers at the given map position, at the current map zoom setting
-    private List<MapMarker> getMarkersCovering(ICoordinate pos, double pixelWidth) {
-        List<MapMarker> ans = new ArrayList<>();
+    /**
+     * Get all the unique markers at the given map position, at the current map zoom setting
+     * @param pos Coordinte
+     * @param pixelWidth How big is a single pixel on the map
+     * @return All the markers at the given map position
+     */
+    private Collection<MapMarker> getMarkersCovering(ICoordinate pos, double pixelWidth) {
+        Map<Long,MapMarker> answer = new HashMap<>();
         Set<Layer> visibleLayers = getVisibleLayers();
-        for (MapMarker m : map().getMapMarkerList()) {
-            if (!visibleLayers.contains(m.getLayer())) continue;
-            double distance = SphericalGeometry.distanceBetween(m.getCoordinate(), pos);
-            if (distance < m.getRadius() * pixelWidth) {
-                ans.add(m);
+        synchronized(this) {
+            for (MapMarker m : map().getMapMarkerList()) {
+                if (!visibleLayers.contains(m.getLayer())) continue;
+                double distance = SphericalGeometry.distanceBetween(m.getCoordinate(), pos);
+                if (distance < m.getRadius() * pixelWidth) {
+                    answer.put(((MapMarkerImage)m).getId(),m);
+                }
             }
         }
-        return ans;
+        return answer.values();
     }
 
     public JMapViewer map() {
@@ -171,24 +214,28 @@ public class Application extends JFrame {
         new Application().setVisible(true);
     }
 
-    // Update which queries are visible after any checkBox has been changed
+    /**
+     * Updates which queries are visible after any checkBox has been changed
+     */
     public void updateVisibility() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                System.out.println("Recomputing visible queries");
-                for (Query q : queries) {
-                    JCheckBox box = q.getCheckBox();
-                    Boolean state = box.isSelected();
-                    q.setVisible(state);
-                }
-                map().repaint();
+        SwingUtilities.invokeLater(() -> {
+            System.out.println("Recomputing visible queries");
+            for (Query q : queries) {
+                JCheckBox box = q.getCheckBox();
+                boolean state = box.isSelected();
+                q.setVisible(state);
             }
+            map().repaint();
         });
     }
 
-    // A query has been deleted, remove all traces of it
+    /**
+     * After query has been deleted, remove all traces of it
+     * @param query Expired query
+     */
     public void terminateQuery(Query query) {
-        // TODO: This is the place where you should disconnect the expiring query from the twitter source
+        // Task 4: This is the place where the expiring query disconnects from the twitter source
+        twitterSource.deleteObserver(query);
         queries.remove(query);
         Set<String> allterms = getQueryTerms();
         twitterSource.setFilterTerms(allterms);

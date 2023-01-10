@@ -6,7 +6,7 @@ import org.openstreetmap.gui.jmapviewer.interfaces.ICoordinate;
  * Spherical Geometry Utilities
  */
 public class SphericalGeometry {
-    private static final int RADIUS = 6371000;   // radius of earth in metres
+    private static final int EARTH_RADIUS = 6371000;   // radius of earth in metres
 
     /**
      * Find distance in metres between two lat/lon points
@@ -26,6 +26,6 @@ public class SphericalGeometry {
                 * Math.sin(deltaLon / 2.0) * Math.sin(deltaLon / 2.0);
         double c = 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        return c * RADIUS;
+        return c * EARTH_RADIUS;
     }
 }

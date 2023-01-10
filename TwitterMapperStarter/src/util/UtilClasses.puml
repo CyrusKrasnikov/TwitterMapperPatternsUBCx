@@ -1,0 +1,16 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Util
+
+ImageCache --.> Util
+
+class SphericalGeometry{
+    - {static} int EARTH_RADIUS
+    + {static} double distanceBetween(ICoordinate p1, ICoordinate p2)
+}
+
+class ObjectSink
+class ObjectSource
+
+@enduml

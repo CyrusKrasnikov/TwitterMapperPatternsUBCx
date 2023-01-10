@@ -9,6 +9,8 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 
+import static java.lang.System.out;
+
 /**
  * Helpful methods that don't clearly fit anywhere else.
  */
@@ -33,7 +35,17 @@ public class Util {
         return new Coordinate(newLat, newLon);
     }
 
-    public static BufferedImage defaultImage = imageFromURL("http://png-2.findicons.com/files/icons/1995/web_application/48/smiley.png");
+    public static BufferedImage defaultImage; //imageFromURL("http://png-2.findicons.com/files/icons/1995/web_application/48/smiley.png");
+
+    static {
+        try {
+            defaultImage = ImageIO.read(new File("data/boring.png"));
+        } catch (IOException e) {
+            out.println("Default image 'data/boring.png' is not found");
+            e.printStackTrace();
+        }
+    }
+
     public static BufferedImage imageFromURL(String url) {
         try {
             BufferedImage img = ImageIO.read(new URL(url));

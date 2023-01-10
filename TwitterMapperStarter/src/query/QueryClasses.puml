@@ -1,0 +1,14 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Query{
+    - JMapViewer map;
+    - Layer layer;
+    - final Color color;
+    - final String queryString;
+    - final Filter filter;
+    - JCheckBox checkBox;
+}
+Query --|> Observer 
+
+@enduml

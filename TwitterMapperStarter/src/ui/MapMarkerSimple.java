@@ -6,6 +6,9 @@ import org.openstreetmap.gui.jmapviewer.MapMarkerCircle;
 
 import java.awt.*;
 
+/**
+ * Simple circle with predefined background color
+ */
 public class MapMarkerSimple extends MapMarkerCircle {
     public static final double defaultMarkerSize = 5.0;
     public static final Color defaultColor = Color.red;

@@ -3,21 +3,21 @@ package filters;
 /**
  * Parse a string in the filter language and return the filter.
  * Throws a SyntaxError exception on failure.
- *
+ * <p>
  * This is a top-down recursive descent parser (a.k.a., LL(1))
- *
+ * <p>
  * The really short explanation is that an LL(1) grammar can be parsed by a collection
  * of mutually recursive methods, each of which is able to recognize a single grammar symbol.
- *
+ * <p>
  * The grammar (EBNF) for our filter language is:
- *
+ * <p>
  * goal    ::= expr
  * expr    ::= orexpr
  * orexpr  ::= andexpr ( "or" andexpr )*
  * andexpr ::= notexpr ( "and" notexpr )*
  * notexpr ::= prim | "not" notexpr
  * prim    ::= word | "(" expr ")"
- *
+ * <p>
  * The reason for writing it this way is that it respects the "natural" precedence of boolean
  * expressions, where the precedence order (decreasing) is:
  *      parens
@@ -29,7 +29,7 @@ package filters;
  * To be parsed like:
  *      blue or (green and (not red)) or (yellow and purple)
  */
-public class Parser {
+public class Parser { // Task 3: Connect your new classes to the filter parser
     private final Scanner scanner;
     private static final String LPAREN = "(";
     private static final String RPAREN = ")";
@@ -38,9 +38,15 @@ public class Parser {
     private static final String NOT = "not";
 
     public Parser(String input) {
-        scanner = new Scanner(input);
+        scanner = new Scanner();
+        scanner.tokenize(input); // To be improved: tokenize input string in another method instead of the constructor
     }
 
+    /**
+     * EFFECTS: Creates filter instance corresponding to the text expression (query) entered by user into search box
+     * @return Filter which represents expression
+     * @throws SyntaxError if there is extra characters at the end of search query
+     */
     public Filter parse() throws SyntaxError {
         Filter ans = expr();
         if (scanner.peek() != null) {
@@ -61,8 +67,8 @@ public class Parser {
             Filter right = andexpr();
             // At this point we have two subexpressions ("sub" on the left and "right" on the right)
             // that are to be connected by "or"
-            // TODO: Construct the appropriate new Filter object
             // The new filter object should be assigned to the variable "sub"
+            sub = new OrFilter(sub,right);
             token = scanner.peek();
         }
         return sub;
@@ -76,8 +82,8 @@ public class Parser {
             Filter right = notexpr();
             // At this point we have two subexpressions ("sub" on the left and "right" on the right)
             // that are to be connected by "and"
-            // TODO: Construct the appropriate new Filter object
             // The new filter object should be assigned to the variable "sub"
+            sub = new AndFilter(sub,right);
             token = scanner.peek();
         }
         return sub;
@@ -90,8 +96,7 @@ public class Parser {
             Filter sub = notexpr();
             return new NotFilter(sub);
         } else {
-            Filter sub = prim();
-            return sub;
+            return prim();
         }
     }
 

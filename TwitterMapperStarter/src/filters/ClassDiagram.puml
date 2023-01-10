@@ -1,0 +1,67 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+interface Filter
+{
+    boolean matches(status)
+    {static} Filter parse(queryString)
+    List<String> terms()
+}
+abstract class BinaryOperatorFilter{
+    Filter left
+    Filter right
+    boolean matches(status)
+    List<String> terms()
+    String toString()
+}
+Filter<|--BinaryOperatorFilter
+
+class AndFilter{
+boolean matches(status)
+String getOperator()
+}
+BinaryOperatorFilter<|--AndFilter
+
+class OrFilter{
+    boolean matches(status)
+    String getOperator()
+}
+BinaryOperatorFilter<|--OrFilter
+
+class BasicFilter{
+    String word
+    Pattern pattern
+    boolean matches(status)
+    List<String> terms()
+    String toString()
+}
+Filter<|--BasicFilter
+
+class NotFilter{
+    Filter child
+    boolean matches(status)
+    List<String> terms()
+    String toString()
+}
+Filter<|--NotFilter
+
+class Parser{
+- Scanner scanner
++ Filter parse()
+- Filter expr()
+- Filter orexpr()
+- Filter andexpr()
+- Filter notexpr()
+- Filter prim()
+}
+Filter <.-- Parser
+Scanner <-- Parser
+
+class Scanner{
+- List<String> tokens
+
++ tokenize(String input)
++ String peek()
++ String advance()
+}
+@enduml

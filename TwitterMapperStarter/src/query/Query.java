@@ -1,21 +1,28 @@
 package query;
 
 import filters.Filter;
+import org.openstreetmap.gui.jmapviewer.Coordinate;
 import org.openstreetmap.gui.jmapviewer.JMapViewer;
 import org.openstreetmap.gui.jmapviewer.Layer;
+import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
+import org.openstreetmap.gui.jmapviewer.interfaces.MapObject;
+import twitter4j.Status;
+import ui.MapMarkerImage;
+import util.Util;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * A query over the twitter stream.
- * TODO: Task 4: you are to complete this class.
  */
-public class Query {
+public class Query implements Observer { // Task 4: Complete the Query class
     // The map on which to display markers when the query matches
     private final JMapViewer map;
     // Each query has its own "layer" so they can be turned on and off all at once
-    private Layer layer;
+    private final Layer layer;
     // The color of the outside area of the marker
     private final Color color;
     // The string representing the filter for this query
@@ -62,12 +69,38 @@ public class Query {
     }
 
     /**
-     * This query is no longer interesting, so terminate it and remove all traces of its existence.
-     *
-     * TODO: Implement this method
+     * When the query is no longer interesting we terminate it and remove all traces of its existence.
      */
-    public void terminate() {
+    public void terminate() { // Task 4
+        java.util.List<MapObject> list = layer.getElements();
+        layer.setVisible(false);
+        for (MapObject marker : list) {
+            map.removeMapMarker((MapMarker) marker);
+        }
+    }
 
+    /**
+     * EFFECTS: Called by TwitterSource when a new tweet is acquired. Matches filter adds marker to the map
+     * MODIFIES: this
+     * @param o     TwitterSource
+     * @param arg   Status of tweet
+     * @see     Status
+     * @see     twitter.TwitterSource
+     */
+    @Override
+    public void update(Observable o, Object arg) {
+        Status status = (Status)arg;
+        if(filter.matches(status)){
+            Coordinate coordinate = Util.statusCoordinate(status);
+            MapMarkerImage marker = new MapMarkerImage(layer,coordinate,color,
+                    status.getId(),
+                    status.getUser().getName(),
+                    status.getText(),
+                    status.getUser().getProfileImageURL()
+            );
+            layer.add(marker);
+            layer.setVisibleTexts(false);
+            map.addMapMarker(marker);
+        }
     }
 }
-

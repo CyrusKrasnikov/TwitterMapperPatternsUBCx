@@ -1,18 +1,15 @@
 package util;
 
 import java.io.*;
-
+import java.nio.file.Files;
 
 public class ObjectSink {
-    private File file;
     private ObjectOutputStream outstream;
 
     public ObjectSink(String filename) {
         try {
-            file = new File(filename);
-            outstream = new ObjectOutputStream(new FileOutputStream(file));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            File file = new File(filename);
+            outstream = new ObjectOutputStream(Files.newOutputStream(file.toPath()));
         } catch (IOException e) {
             e.printStackTrace();
         }

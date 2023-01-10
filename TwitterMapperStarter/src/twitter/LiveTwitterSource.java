@@ -5,9 +5,7 @@ import twitter4j.conf.ConfigurationBuilder;
 
 /**
  * Encapsulates the connection to Twitter
- *
  * Terms to include in the returned tweets can be set with setFilterTerms
- *
  * Implements Observable - each received tweet is signalled to all observers
  */
 public class LiveTwitterSource extends TwitterSource {
